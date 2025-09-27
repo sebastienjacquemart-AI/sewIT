@@ -492,4 +492,5 @@ const startServer = async () => {
   }
 };
 
-startServer();
+startServer();// Export app for testing
+module.exports = app;
