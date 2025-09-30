@@ -1,4 +1,7 @@
-// tests/categories.test.js - Categories Tests
+// tests/categories.test.js - Categories Tests (FIXED)
+const request = require('supertest');
+const { app } = require('./test-server');
+
 describe('Categories', () => {
   describe('GET /api/categories', () => {
     it('should return all default categories', async () => {
@@ -9,14 +12,12 @@ describe('Categories', () => {
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBe(8);
 
-      // Check for specific categories
       const categoryIds = response.body.map(cat => cat.id);
       expect(categoryIds).toContain('bike-repair');
       expect(categoryIds).toContain('tutoring');
       expect(categoryIds).toContain('moving');
       expect(categoryIds).toContain('cleaning');
 
-      // Check category structure
       const bikeCategory = response.body.find(cat => cat.id === 'bike-repair');
       expect(bikeCategory.name).toBe('Bike Repair');
       expect(bikeCategory.icon).toBe('🚲');

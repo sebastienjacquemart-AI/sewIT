@@ -1,51 +1,59 @@
+// tests/setup.js - FIXED Setup File
 const { Pool } = require('pg');
+const { setupTestDatabase } = require('./db-setup');
+require('dotenv').config();
 
-// Test database configuration
-const testPool = new Pool({
-  user: 'student_app',
-  host: 'localhost',
-  database: 'student_services_test',
-  password: 'secure_password_123',
-  port: 5432,
-});
+let pool;
 
-// Set test environment
-process.env.NODE_ENV = 'test';
-process.env.PORT = '5003'; // Different port for tests
-process.env.JWT_SECRET = 'test_jwt_secret';
-process.env.DB_NAME = 'student_services_test';
-
-// Global test setup
+// Global setup - run once before all tests
 beforeAll(async () => {
-  try {
-    await testPool.query('SELECT 1');
-    console.log('✅ Test database connected');
-  } catch (error) {
-    console.error('❌ Test database connection failed:', error.message);
-    process.exit(1);
-  }
-});
-
-afterAll(async () => {
-  await testPool.end();
-});
+  await setupTestDatabase();
+  
+  // Create a fresh connection for cleanup
+  pool = new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'student_services_test',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+  });
+  
+  console.log('✅ Test database connected');
+}, 30000);
 
 // Clean database before each test
 beforeEach(async () => {
   try {
-    await testPool.query('DELETE FROM reviews');
-    await testPool.query('DELETE FROM bookings');  
-    await testPool.query('DELETE FROM services');
-    await testPool.query('DELETE FROM users');
+    await pool.query('TRUNCATE TABLE reviews, bookings, services, users RESTART IDENTITY CASCADE');
     
-    // Reset auto-increment counters
-    await testPool.query('ALTER SEQUENCE users_id_seq RESTART WITH 1');
-    await testPool.query('ALTER SEQUENCE services_id_seq RESTART WITH 1');
-    await testPool.query('ALTER SEQUENCE bookings_id_seq RESTART WITH 1');
-    await testPool.query('ALTER SEQUENCE reviews_id_seq RESTART WITH 1');
+    // Re-insert default categories
+    const categories = [
+      { id: 'bike-repair', name: 'Bike Repair', icon: '🚲' },
+      { id: 'moving', name: 'Moving Help', icon: '📦' },
+      { id: 'cleaning', name: 'Cleaning', icon: '🧽' },
+      { id: 'gardening', name: 'Gardening', icon: '🌱' },
+      { id: 'pet-care', name: 'Pet Care', icon: '🐕' },
+      { id: 'tutoring', name: 'Tutoring', icon: '📚' },
+      { id: 'music', name: 'Music Lessons', icon: '🎵' },
+      { id: 'photography', name: 'Photography', icon: '📸' }
+    ];
+
+    for (const category of categories) {
+      await pool.query(
+        'INSERT INTO categories (id, name, icon) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
+        [category.id, category.name, category.icon]
+      );
+    }
   } catch (error) {
-    console.error('Database cleanup error:', error.message);
+    console.error('❌ Database cleanup error:', error);
   }
 });
 
-module.exports = { testPool };
+// Close database connection after all tests
+afterAll(async () => {
+  if (pool) {
+    await pool.end();
+  }
+});
+
+module.exports = { pool };

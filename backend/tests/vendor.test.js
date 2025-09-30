@@ -1,7 +1,9 @@
-// tests/vendor.test.js - Vendor Management Tests
+// tests/vendor.test.js - Vendor Management Tests (FIXED)
+const request = require('supertest');
+const { app } = require('./test-server');
+
 describe('Vendor Management', () => {
   let userToken;
-  let userId;
 
   beforeEach(async () => {
     const userResponse = await request(app)
@@ -12,7 +14,6 @@ describe('Vendor Management', () => {
         name: 'Test User'
       });
     userToken = userResponse.body.token;
-    userId = userResponse.body.user.id;
   });
 
   describe('POST /api/users/become-vendor', () => {

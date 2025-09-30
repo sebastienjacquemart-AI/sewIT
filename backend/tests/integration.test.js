@@ -1,10 +1,8 @@
-// tests/integration.test.js - Complete Flow Integration Tests
-describe('Complete Marketplace Flow', () => {
-  let vendorToken;
-  let buyerToken;
-  let serviceId;
-  let bookingId;
+// tests/integration.test.js - Complete Flow Integration Tests (FIXED)
+const request = require('supertest');
+const { app } = require('./test-server');
 
+describe('Complete Marketplace Flow', () => {
   it('should complete full marketplace flow', async () => {
     // 1. Register vendor
     const vendorResponse = await request(app)
@@ -15,7 +13,7 @@ describe('Complete Marketplace Flow', () => {
         name: 'Flow Vendor'
       })
       .expect(201);
-    vendorToken = vendorResponse.body.token;
+    const vendorToken = vendorResponse.body.token;
 
     // 2. Become vendor
     await request(app)
@@ -38,7 +36,7 @@ describe('Complete Marketplace Flow', () => {
         categoryId: 'bike-repair'
       })
       .expect(201);
-    serviceId = serviceResponse.body.service.id;
+    const serviceId = serviceResponse.body.service.id;
 
     // 4. Register buyer
     const buyerResponse = await request(app)
@@ -49,9 +47,9 @@ describe('Complete Marketplace Flow', () => {
         name: 'Flow Buyer'
       })
       .expect(201);
-    buyerToken = buyerResponse.body.token;
+    const buyerToken = buyerResponse.body.token;
 
-    // 5. Browse services (buyer can see vendor's service)
+    // 5. Browse services
     const servicesResponse = await request(app)
       .get('/api/services')
       .expect(200);
@@ -69,9 +67,9 @@ describe('Complete Marketplace Flow', () => {
         message: 'Integration test booking'
       })
       .expect(201);
-    bookingId = bookingResponse.body.booking.id;
+    const bookingId = bookingResponse.body.booking.id;
 
-    // 7. Vendor checks dashboard (should show pending booking)
+    // 7. Vendor checks dashboard
     const dashboardResponse = await request(app)
       .get('/api/vendor/dashboard')
       .set('Authorization', `Bearer ${vendorToken}`)
